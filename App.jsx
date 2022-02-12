@@ -4,10 +4,11 @@ import React from 'react';
 import 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
 
-import TodoList from './src/TodoList';
+import TodoList from './src/Projects/TodoList';
 import Home from './src/Home';
+import CurrencyConverter from './src/Projects/CurrencyConverter';
 
 const Drawer = createDrawerNavigator();
 
@@ -40,13 +41,25 @@ export default function App() {
           options={{
             title: 'Todo List ≖‿≖',
             drawerIcon: ({ color }) => <AntDesign name="bars" size={20} color={color} />,
+            drawerActiveTintColor: '#fca5a5',
+            headerStyle: {
+              backgroundColor: '#f87171',
+            },
+          }}
+          name="TodoList"
+          component={TodoList}
+        />
+        <Drawer.Screen
+          options={{
+            title: 'Currency Converter $‿$',
+            drawerIcon: ({ color }) => <MaterialCommunityIcons name="currency-usd-circle-outline" size={20} color={color} />,
             drawerActiveTintColor: 'orange',
             headerStyle: {
               backgroundColor: '#fcd34d',
             },
           }}
-          name="TodoList"
-          component={TodoList}
+          name="CurrencyConverter"
+          component={CurrencyConverter}
         />
       </Drawer.Navigator>
       <StatusBar style="auto" />
