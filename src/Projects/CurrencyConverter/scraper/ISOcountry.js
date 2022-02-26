@@ -1029,10 +1029,10 @@ const dataJSON = {
   },
 };
 
-exports.getISOByParam = function (param, value) {
+export default function (param, value) {
   for (const key in dataJSON) {
     if (dataJSON.hasOwnProperty(key) && dataJSON[key][param] === value) {
       return key;
     }
   }
-};
+}

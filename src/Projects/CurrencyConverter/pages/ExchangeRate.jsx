@@ -11,7 +11,7 @@ import moment from 'moment';
 import { FAB } from 'react-native-paper';
 import { AnimatePresence, MotiView } from 'moti';
 import scrapeData from '../scraper/ExchangeRate';
-import { getISOByParam } from '../scraper/ISOcountry';
+import getISOByParam from '../scraper/ISOcountry';
 import currencyName from '../scraper/currencyName.json';
 
 function RateItem({ item }) {
@@ -70,6 +70,7 @@ function ExchangeRate() {
   const [refreshing, setRefreshing] = useState(false);
   const [FABShow, setFABShow] = useState(false);
   const listRef = useRef();
+  // 当useState更新，就会rerender，useRef就是永恒的东西，只要component还存在，他就会保持在initial set他的value
 
   useEffect(() => {
     scrapeData().then((d) => setData(d));
@@ -81,7 +82,7 @@ function ExchangeRate() {
   };
 
   const listOnScroll = (e) => {
-    if (e.nativeEvent.contentOffset.y > 150) {
+    if (e.nativeEvent.contentOffset.y > 150) { // scroll到的地方距离顶端150
       setFABShow(true);
     } else {
       setFABShow(false);
@@ -188,7 +189,8 @@ function ExchangeRate() {
               style={{
                 backgroundColor: '#EAB308',
               }}
-              onPress={() => listRef.current.scrollToOffset(0)}
+              onPress={() => listRef.current.scrollToOffset(0)} 
+              // listRef.current 装着的就是flatlist本身，scrollToOffset就是和list最顶端距离为0
               icon={() => <Feather name="chevrons-up" size={24} color="white" />}
             />
           </MotiView>
