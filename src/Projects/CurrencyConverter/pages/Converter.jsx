@@ -1,20 +1,28 @@
+/* eslint-disable react/prop-types */
 import {
   View, Text, Pressable, FlatList,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5, Feather } from '@expo/vector-icons';
 import CurrencyInput from 'react-native-currency-input';
 import CountryFlag from 'react-native-country-flag';
 import { createStackNavigator } from '@react-navigation/stack';
 import getISOByParam from '../scraper/ISOcountry';
-import scrapeData from '../scraper/ExchangeRate';
+import scrapeData from '../scraper/scrape';
+import currencyName from '../scraper/currencyName.json';
+
+function formatNumber(num) {
+  return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+}
 
 function ConverterIndex({ navigation }) {
   const [fromValue, setFromValue] = useState(0);
   const [toValue, setToValue] = useState(0);
   const [fromCurrency, setFromCurrency] = useState('MYR');
   const [toCurrency, setToCurrency] = useState('USD');
+
+  const [rates, setRates] = useState();
 
   useEffect(
     () => {
@@ -25,17 +33,29 @@ function ConverterIndex({ navigation }) {
     [fromValue],
   );
 
+  useEffect(() => {
+    scrapeData(fromCurrency).then((res) => setRates(res.rates));
+  }, [fromCurrency]);
+
+  useEffect(() => {
+    if (rates) {
+      setToValue((rates[toCurrency] * fromValue).toFixed(2));
+    }
+  }, [fromValue, toCurrency, rates]);
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
         <Pressable
-          onPress={() => navigation.navigate('currencyChooser')}
+          onPress={() => navigation.navigate('currencyChooser', {
+            currency: fromCurrency,
+            setCurrency: setFromCurrency,
+          })}
           style={{
             flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingVertical: 12,
+            paddingVertical: 16,
           }}
         >
           <CountryFlag
@@ -46,15 +66,26 @@ function ConverterIndex({ navigation }) {
           <Text style={{ fontSize: 16 }}>{fromCurrency}</Text>
           <FontAwesome5 style={{ marginLeft: 8 }} name="caret-down" size={16} color="black" />
         </Pressable>
-        <Pressable style={{ paddingVertical: 12 }}>
+        <Pressable
+          onPress={() => {
+            setFromCurrency(toCurrency);
+            setToCurrency(fromCurrency);
+          }}
+          style={{ paddingVertical: 12 }}
+        >
           <FontAwesome5 name="exchange-alt" size={18} color="black" />
         </Pressable>
-        <Pressable style={{
-          flex: 1,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        <Pressable
+          onPress={() => navigation.navigate('currencyChooser', {
+            currency: toCurrency,
+            setCurrency: setToCurrency,
+          })}
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
           <CountryFlag
             size={18}
@@ -65,11 +96,17 @@ function ConverterIndex({ navigation }) {
           <FontAwesome5 style={{ marginLeft: 8 }} name="caret-down" size={16} color="black" />
         </Pressable>
       </View>
-      <View style={{ marginTop: 16 }}>
+      <View style={{
+        marginTop: 16,
+        marginHorizontal: 24,
+      }}
+      >
+        <Text style={{ fontSize: 16, marginBottom: 8 }}>
+          From currency:
+        </Text>
         <CurrencyInput
           style={{
             backgroundColor: '#F1F5F9',
-            marginHorizontal: 24,
             padding: 16,
             fontSize: 24,
             borderRadius: 6,
@@ -77,35 +114,47 @@ function ConverterIndex({ navigation }) {
           }}
           value={fromValue}
           onChangeValue={setFromValue}
-          prefix="$"
+          prefix={currencyName.filter((e) => e.cc === fromCurrency)[0]?.symbol || '$'}
           delimiter=","
           separator="."
           precision={2}
+          selectionColor="#EAB308"
         />
       </View>
-      <View
-        style={{
-          backgroundColor: '#F1F5F9',
-          marginHorizontal: 24,
-          padding: 16,
-          fontSize: 24,
-          elevation: 6,
-          borderRadius: 6,
-          marginTop: 12,
-        }}
-      >
-        <Text style={{ fontSize: 24 }}>0.00</Text>
+      <View style={{ marginHorizontal: 24 }}>
+        <Text style={{ fontSize: 16, marginVertical: 8 }}>To currency:</Text>
+        <View
+          style={{
+            backgroundColor: '#F1F5F9',
+            padding: 16,
+            fontSize: 24,
+            elevation: 6,
+            borderRadius: 6,
+          }}
+        >
+          <Text style={{ fontSize: 24 }}>
+            {currencyName.filter((e) => e.cc === toCurrency)[0]?.symbol || '$'}
+            {formatNumber(toValue)}
+          </Text>
+        </View>
+
       </View>
+
     </View>
   );
 }
-function CurrencyItem({ item }) {
+function CurrencyItem({ item, params, navigation }) {
   return (getISOByParam('currency', item[0]) !== undefined && currencyName.filter((e) => e.cc === item[0])[0] !== undefined ? (
-    <View style={{
-      marginVertical: 6,
-      flexDirection: 'row',
-      alignItems: 'center',
-    }}
+    <Pressable
+      onPress={() => {
+        params.setCurrency(item[0]);
+        navigation.navigate('converterIndex');
+      }}
+      style={{
+        marginVertical: 6,
+        flexDirection: 'row',
+        alignItems: 'center',
+      }}
     >
       <CountryFlag
         style={{
@@ -130,21 +179,19 @@ function CurrencyItem({ item }) {
         >
           {currencyName.filter((e) => e.cc === item[0])[0].name}
         </Text>
-        {/* idk */}
+        <Text style={{
+          color: '#EAB308',
+        }}
+        >
+          {item[0]}
+        </Text>
       </View>
-      <Text style={{
-        color: '#EAB308',
-        fontWeight: 'bold',
-        marginLeft: 24,
-      }}
-      >
-        {item[1]}
-      </Text>
-    </View>
+      {item[0] === params.currency && <Feather name="check" size={18} color="#EAB308" />}
+    </Pressable>
   ) : null);
 }
 
-function CurrencyChooser() {
+function CurrencyChooser({ navigation, route: { params } }) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -158,20 +205,33 @@ function CurrencyChooser() {
       padding: 16,
     }}
     >
-      {data ? (
+      {data?.rates ? (
         <FlatList
           data={Object.entries(data.rates)}
           keyExtractor={(item) => item[0]}
-          renderItem={CurrencyItem}
+          renderItem={(props) => (
+            <CurrencyItem
+              // eslint-disable-next-line react/jsx-props-no-spreading
+              {...props}
+              params={params}
+              navigation={navigation}
+            />
+          )}
           contentContainerStyle={{
             paddingBottom: 24,
           }}
         />
       ) : null }
-      <Pressable style={{
-        backgroundColor: '#EAB308',
-        padding: 16,
-      }}
+      <Pressable
+        style={{
+          backgroundColor: '#EAB308',
+          padding: 16,
+          justifyContent: 'center',
+          alignItems: 'center',
+          elevation: 6,
+          borderRadius: 6,
+        }}
+        onPress={() => navigation.goBack()}
       >
         <Text style={{ color: 'white' }}>Cancel</Text>
 

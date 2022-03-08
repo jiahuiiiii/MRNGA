@@ -10,7 +10,7 @@ import { Feather } from '@expo/vector-icons';
 import moment from 'moment';
 import { FAB } from 'react-native-paper';
 import { AnimatePresence, MotiView } from 'moti';
-import scrapeData from '../scraper/ExchangeRate';
+import scrapeData from '../scraper/scrape';
 import getISOByParam from '../scraper/ISOcountry';
 import currencyName from '../scraper/currencyName.json';
 
@@ -189,7 +189,7 @@ function ExchangeRate() {
               style={{
                 backgroundColor: '#EAB308',
               }}
-              onPress={() => listRef.current.scrollToOffset(0)} 
+              onPress={() => listRef.current.scrollToOffset(0)}
               // listRef.current 装着的就是flatlist本身，scrollToOffset就是和list最顶端距离为0
               icon={() => <Feather name="chevrons-up" size={24} color="white" />}
             />
